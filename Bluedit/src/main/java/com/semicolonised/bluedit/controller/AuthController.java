@@ -28,6 +28,7 @@ public class AuthController {
         return new ResponseEntity<>("Account Activated Successfully", OK);
     }
 
+    @PostMapping("/login")
     public AuthenticationResponse login(@RequestBody LoginRequest loginRequest) {
         return authService.login(loginRequest);
     }

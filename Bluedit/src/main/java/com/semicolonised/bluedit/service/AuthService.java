@@ -17,6 +17,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,8 @@ public class AuthService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final MailService mailService;
     private final AuthenticationManager authenticationManager;
-    private JwtProvider jwtProvider;
+    private final JwtProvider jwtProvider;
+    private final UserDetailsService userDetailsService;
 
     @Transactional
     public void signup(RegisterRequest registerRequest) {
@@ -44,7 +47,7 @@ public class AuthService {
         user.setCreated(Instant.now());
         user.setEnabled(false);
 
-        // userRepository.save(user);
+        log.info("User Registered Successfully, Sending Authentication Email");
         String verificationToken = generateVerificationToken(user);
 
         mailService.sendMail(new NotificationEmail(
@@ -70,8 +73,7 @@ public class AuthService {
     public void verifyAccount(String token) {
         Optional<VerificationToken> verificationTokenOptional =
                 verificationTokenRepository.findByToken(token);
-        verificationTokenOptional.orElseThrow(() -> new BlueditException("Invalid token"));
-        fetchUserAndEnable(verificationTokenOptional.get());
+        fetchUserAndEnable(verificationTokenOptional.orElseThrow(() -> new BlueditException("Invalid token")));
     }
 
     @Transactional
@@ -86,8 +88,8 @@ public class AuthService {
         Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(), loginRequest.getPassword()
         ));
-        SecurityContextHolder.getContext().setAuthentication(authenticate);
-        String token=jwtProvider.generateToken(authenticate);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+        String token = jwtProvider.generateToken(userDetails);
 
         return new AuthenticationResponse(token, loginRequest.getUsername());
     }

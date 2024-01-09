@@ -1,5 +1,6 @@
 package com.semicolonised.bluedit.config;
 
+import com.semicolonised.bluedit.service.UserDetailsServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,11 +35,12 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
 
+        httpSecurity.authenticationProvider(authenticationProvider());
         return httpSecurity.build();
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider=new DaoAuthenticationProvider();
 
         authProvider.setUserDetailsService(userDetailsService);
